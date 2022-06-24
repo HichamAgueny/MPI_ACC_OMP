@@ -1,10 +1,10 @@
 program laplace_gpu
 
       use mpi
-#ifdef OPENACC
+#ifdef _OPENACC
        use openacc
 #endif
-#ifdef OPENMP
+#ifdef _OPENMP
        use omp_lib
 #endif
 
@@ -24,11 +24,11 @@ program laplace_gpu
        double precision, allocatable :: f(:,:),f_k(:,:),errin(:)
        double precision, allocatable :: f_send(:,:),f_t(:,:),f_full(:,:)
 
-#if defined(OPENACC) || defined(OPENMP)
+#if defined(_OPENACC) || defined(_OPENMP)
       integer(kind=acc_device_kind) deviceType
       integer :: myDevice,numDevice,host_rank,host_comm
 #endif
-#ifdef OPENMP
+#ifdef _OPENMP
       integer :: omp_get_num_devices,numDevice,&
                  omp_get_device_num
 #endif      
@@ -117,13 +117,13 @@ program laplace_gpu
 !memory region (via the type MPI_COMM_TYPE_SHARED).
 !The call returns a new communicator "host_comm", which is created by
 !each subgroup.
-#if defined(OPENACC) || defined(OPENMP)
+#if defined(_OPENACC) || defined(_OPENMP)
       call MPI_COMM_SPLIT_TYPE(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,&
                                MPI_INFO_NULL, host_comm,ierr)
       call MPI_COMM_RANK(host_comm, host_rank,ierr)
 #endif
 
-#ifdef OPENACC
+#ifdef _OPENACC
 !returns the device type to be used
       deviceType = acc_get_device_type()
 
@@ -136,7 +136,7 @@ program laplace_gpu
       call acc_set_device_num(myDevice, deviceType)
 #endif
 
-#ifdef OPENMP
+#ifdef _OPENMP
 !returns the device number of the device on which the calling thread is
 !executing
      deviceType = omp_get_device_num()
@@ -144,10 +144,10 @@ program laplace_gpu
      numDevice = omp_get_num_devices()
 !sets the device number to use in device constructs by setting the
 !initial value of the default-device-var 
-     call omp_set_default_device(numDevice)
+     call omp_set_default_device(myDevice)
 #endif
 
-#if defined(OPENACC) || defined(OPENMP)
+#if defined(_OPENACC) || defined(_OPENMP)
       if (numDevice.lt. 1) then
          print *, "--ERROR: There are no devices available on this host.&
               my rank is", myid, "I stop"
@@ -166,22 +166,22 @@ program laplace_gpu
        print*, "--MPI rank", myid, "is connected to GPU", myDevice
 #endif
 
-#ifdef OPENACC
+#ifdef _OPENACC
 !$acc data copyin(f) copyout(f_k) 
 #endif
-#ifdef OPENMP
+#ifdef _OPENMP
 !$omp target data map(to:f) map(from:f_k)
 #endif
 
        do while (max_err.gt.error.and.iter.le.max_iter)
 
 !copy data from GPU to CPU
-#ifdef OPENACC
-!$acc update host(f) 
-!!$acc host_data use_device(f)
+#ifdef _OPENACC
+!!$acc update host(f) 
+!$acc host_data use_device(f)
 #endif
-#ifdef OPENMP
-!$omp target update device(numDevice) from(f)
+#ifdef _OPENMP
+!$omp target update device(myDevice) from(f)
 !!$omp target update mapfrom(f)
 !!$omp target data use_device_ptr(ptr-list)
 !!structured block
@@ -214,12 +214,13 @@ program laplace_gpu
         endif
 
 !update data from CPU to GPU
-#ifdef OPENACC
-!$acc update device(f) 
+#ifdef _OPENACC
+!!$acc update device(f) 
+!$acc end host_data
 !$acc parallel loop present(f,f_k) collapse(2)
 #endif
-#ifdef OPENMP
-!$omp target update device(num_device) to(f)
+#ifdef _OPENMP
+!$omp target update device(myDevice) to(f)
 !!$omp target update mapto(f)
 !$omp target teams distribute parallel do collapse(2) schedule(static,1)         
 #endif
@@ -230,19 +231,19 @@ program laplace_gpu
                f_k(i,j) = 0.25*(d2fx + d2fy)
              enddo
           enddo
-#ifdef OPENACC
+#ifdef _OPENACC
 !$acc end parallel
 #endif
-#ifdef OPENMP
+#ifdef _OPENMP
 !$omp end target teams distribute parallel do
 #endif
 
           max_err_part=0.
 
-#ifdef OPENACC
+#ifdef _OPENACC
 !$acc parallel loop present(f,f_k) collapse(2) reduction(max:max_err_part)
 #endif
-#ifdef OPENMP
+#ifdef _OPENMP
 !$omp target teams distribute parallel do reduction(max:max_err_part) collapse(2) schedule(static,1) firstprivate(max_err_part)
 #endif
           do j=1,nyp
@@ -251,10 +252,10 @@ program laplace_gpu
                f(i,j) = f_k(i,j)
             enddo
           enddo
-#ifdef OPENACC
+#ifdef _OPENACC
 !$acc end parallel
 #endif
-#ifdef OPENMP
+#ifdef _OPENMP
 !$omp end target teams distribute parallel do
 #endif
 
@@ -269,10 +270,10 @@ program laplace_gpu
           iter = iter + 1
 
         enddo
-#ifdef OPENACC
+#ifdef _OPENACC
 !$acc end data
 #endif
-#ifdef OPENMP
+#ifdef _OPENMP
 !$omp end target data
 #endif
 

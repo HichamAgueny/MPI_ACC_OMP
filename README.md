@@ -26,9 +26,9 @@ ftn -eZ -D_OPENACC -hacc laplace.mpiacc.amd laplace_gpu.f90
 
 * MPI-OpenMP
 ``` bash
-mpif90 -mp=gpu -Minfo=mp -o laplace.mpiomp.nvidia laplace_gpu.f90
+mpif90 -cpp -D_OPENMP -mp=gpu -Minfo=mp -o laplace.mpiomp.nvidia laplace_gpu.f90
 ``` 
 * MPI-OpenACC
 ``` bash
-mpif90 -fast -acc -Minfo=accel -o laplace.mpiacc.nvidia laplace_gpu.f90
+mpif90 -cpp -D_OPENACC -fast -acc -Minfo=accel -o laplace.mpiacc.nvidia laplace_gpu.f90
 ``` 

@@ -85,12 +85,15 @@ program laplace_gpu
             ii=ii+1
             f_send(1:nx,j) = f_t(1:nx,ii)
          enddo
+         
+         !Send a buffer f_send() to the proc nbr k (single sender to single receiver).
          call MPI_Send(f_send(0:nx+1,0:nyp+1),nsend,MPI_DOUBLE_PRECISION,k,tag,&
                        MPI_COMM_WORLD, ierr)
        enddo
 
        deallocate(f_send); deallocate(f_t)
       else
+        !Receive f() from the proc 0.
         call MPI_Recv(f(0:nx+1,0:nyp+1),nsend,MPI_DOUBLE_PRECISION,0, &
                       tag,MPI_COMM_WORLD, status,ierr)
       endif

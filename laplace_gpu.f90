@@ -40,11 +40,6 @@ program laplace_gpu
         ! Identify the ID rank (process).
         call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr )
 
-!omp_get_num_devices:routine returns the number of 
-!non-host devices available for offloading code or data.
-!        device = omp_get_num_devices (num_device);
-!        omp_set_device_num (myid % device, num_device)
-
         t_start = MPI_WTIME()
 
         if (mod(nx,nproc).ne.0) then

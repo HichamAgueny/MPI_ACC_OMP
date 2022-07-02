@@ -10,11 +10,11 @@ As we will show, this multi-GPU approach has the potential of reducing the compu
 
 By the end of this tutorial, we expect the users to learn about
 
-- How to implement a mixture of the low-level MPI with the OpenACC or OpenMP APIs.    
-- MPI implementation with the GPU-direct/indirect memory access.
+- Implementing a mixture of the low-level MPI with the OpenACC or OpenMP APIs.    
+- Implementing MPI with the GPU-direct/indirect memory access.
 
 
-This tutorial is organized as follows: In section I, we describe the implementation of the low-level MPI alone using an application based on solving the Laplace equation. In section II, we extend the MPI-application to incorporate a GPU approach. This is done by combining MPI with OpenACC/OpenMP AIPs. Here we will address both accelerator and non-accelerator -aware MPI-library (i.e. MPI with direct memory access vs MPI with indirect memory access). Section III is devoted to the performance testing. Section II concludes the tutorial.
+This tutorial is organized as follows: In section I, we describe the implementation of the low-level MPI alone using an application based on solving the Laplace equation. In section II, we extend the MPI-application to incorporate a GPU approach. This is done by combining MPI with OpenACC/OpenMP AIPs. Here we will address both GPU-accelerator and non-accelerator -aware MPI-library (i.e. MPI with direct memory access vs MPI with indirect memory access). Section III is devoted to the performance testing. Section II concludes the tutorial.
 
 ```{contents} Table of Contents
 ```

@@ -43,7 +43,8 @@ Updating the data in the boundaries is a key challenge in this example. This ens
 To check the correctness of the results, one can compute the sum of all the elements or eventually display the converged data either in 1D or 2D for comparison. For this reason, we introduce the `MPI_Gather` operation, which allows aggregating the data from each MPI process and make them available only in the root process. This option, however, might become time consuming and eventually might lead to segmentation error when increasing the size of the data.
 
 ## Compilation process
-Here we describe the compilation process for both GNU, Intel and Cray compilers.
+
+Here we describe the compilation process of an MPI-application for GNU, Intel and Cray compilers.
 
 - GNU compiler
 
@@ -54,10 +55,16 @@ Here we describe the compilation process for both GNU, Intel and Cray compilers.
 (implementation-mpi-acc-omp)=
 # Implementation of MPI-OpenACC and -OpenMP offloading
 
-In this section we extend our MPI-application to incorporate the OpenACC and OpenMP offloading APIs separately. The implementation of this hybrid model targets both NVIDIA- and AMD-GPUs. A special focus here is to address the concept of MPI with GPU-direct memory access ([GPU-aware MPI](...)) and MPI with GPU-indirect memory access ([GPU-non-aware MPI](...)).
+In this section we extend our MPI-application to incorporate the OpenACC and OpenMP offloading APIs targeting both NVIDIA and AMD GPU-accelerators. The implementation of this hybrid model has the potential of fully utilizing multiple GPUs not only within a single GPU node but it extends to multiple GPU nodes (cf. Fig. 1). A special focus here is to address the concept of MPI with GPU-direct memory access ([GPU-aware MPI](...)) and MPI without GPU-direct access ([GPU-non-aware MPI](...)).
+
+## Direct memory access
+
+[Direct memory access](https://www.sciencedirect.com/topics/computer-science/direct-memory-access) (DMA) is a mechanism by which the data can be transferred between an I/O device and a memory system without an involvement of the processor itself. It thus allows two separated processors to directly access the memory of each other via a network. This has the advantage of reducing latency and increasing throughput, which is relevant particularly for modern HPC systems. As an example, the DMA mechanism is used in data management between a CPU-host and a GPU-device as we shall see later.
 
 ## GPU-non-aware MPI
+
 ### The hybrid MPI-OpenACC
+
 
 ### The hybrid MPI-OpenMP offloading
 

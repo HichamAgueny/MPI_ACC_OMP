@@ -142,6 +142,8 @@ program laplace_gpu
      numDevice = omp_get_num_devices()
 !sets the device number to use in device constructs by setting the
 !initial value of the default-device-var 
+
+     myDevice = host_rank
      call omp_set_default_device(myDevice)
 #endif
 

@@ -119,6 +119,8 @@ program laplace_gpu
       call MPI_COMM_SPLIT_TYPE(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,&
                                MPI_INFO_NULL, host_comm,ierr)
       call MPI_COMM_RANK(host_comm, host_rank,ierr)
+      
+      myDevice = host_rank
 #endif
 
 #ifdef _OPENACC
@@ -127,8 +129,6 @@ program laplace_gpu
 
 !returns the number of devices available on the host
       numDevice = acc_get_num_devices(deviceType)
-
-      myDevice = host_rank
 
 !sets the device number and the device type to be used
       call acc_set_device_num(myDevice, deviceType)
@@ -143,7 +143,6 @@ program laplace_gpu
 !sets the device number to use in device constructs by setting the
 !initial value of the default-device-var 
 
-     myDevice = host_rank
      call omp_set_default_device(myDevice)
 #endif
 

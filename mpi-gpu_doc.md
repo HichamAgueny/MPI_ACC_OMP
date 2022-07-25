@@ -23,14 +23,14 @@ This tutorial is organized as follows: In section I, we describe the implementat
 
 - [Summary](#summary)
 - [Implementation of MPI](#implementation-of-mpi)
-- [Implementation of MPI-OpenACC and -OpenMP offloading](#implementation-of-mpi-openacc-and--openmp-offloading)
+- [Implementation of MPI-OpenACC and MPI-OpenMP models](#implementation-of-mpi-openacc-and-mpi-openmp-models)
 - [Performance analysis](#performance-analysis)
 - [Conclusion](#conclusion)
 
 (implementation-mpi)=
 # Implementation of MPI  
 
-The MPI programming model is widely used in the scientific community for intensive parallel computing that requires distributed memory among multiple nodes. In this section, we implement the low-level [MPI standard]( https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) approach to parallelise our `Fortran` application, which is based on solving the Laplace equation in a uniform 2D-grid. Details about the numerical method can be found here. 
+The MPI programming model is widely used in the scientific community for intensive parallel computing that requires distributed memory among multiple nodes. In this section, we implement the low-level [MPI standard](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) approach to parallelise our `Fortran` application, which is based on solving the Laplace equation in a uniform 2D-grid. Details about the numerical method can be found here. 
 
 A starting point here is to generate initial conditions and distribute them among different processes in a communicator group. This is done using the `MPI_Scatter` operation, which distributes the generated data from the processes 0 (root) to processes labeled *myid* (i.e. the rank of an MPI process) defined in the range [*myid=0*, *myid=nproc-1*], where *nproc* is the total number of processes. To be specific, the data, which are initially of dimension *$n_{x}$* x *$n_{y}$* (cf. Fig. 1(a)) are subdivided along the y-direction into sub-arrays of dimension *$n_{x}$* x *$n_{yp}$*, where *$n_{yp}$=$n_{y}$/nproc*, such that each sub-array can be used by each MPI process as shown in Fig. 1(b). 
 
@@ -53,20 +53,43 @@ Here we describe the compilation process of an MPI-application for GNU, Intel an
 - Cray compiler
 
 (implementation-mpi-acc-omp)=
-# Implementation of MPI-OpenACC and -OpenMP offloading
+# Implementation of MPI-OpenACC and MPI-OpenMP models
 
-In this section we extend our MPI-application to incorporate the OpenACC and OpenMP offloading APIs targeting both NVIDIA and AMD GPU-accelerators. The implementation of this hybrid model has the potential of fully utilizing multiple GPUs not only within a single GPU node but it extends to multiple GPU nodes (cf. Fig. 1). A special focus here is to address the concept of MPI with GPU-direct memory access ([GPU-aware MPI](...)) and MPI without GPU-direct access ([GPU-non-aware MPI](...)).
+In this section we extend our MPI-application to incorporate the OpenACC and OpenMP offloading APIs targeting both NVIDIA and AMD GPU-accelerators. The implementation of this hybrid model has the potential of fully utilizing multiple GPUs not only within a single GPU node but it extends to multiple GPU nodes (cf. Fig. 1). A special focus here is to address the concept of MPI with GPU-direct memory access ([GPU-aware MPI](...)) and MPI without GPU-direct access ([GPU-non-aware MPI](...)). The approach is how to make a GPU-device aware or not aware of the availability of a MPI-library, such that a direct or non-direct access to the library can be accomplished. Before addressing this concept, it is worthwhile defining the mechanism of direct-memory access and introducing how to establish a connection between each MPI rank and a specific GPU-device. Here, we are in the situation in which a host and a device have a distinct memory (i.e. non-shared memory device).
 
 ## Direct memory access
 
 [Direct memory access](https://www.sciencedirect.com/topics/computer-science/direct-memory-access) (DMA) is a mechanism by which the data can be transferred between an I/O device and a memory system without an involvement of the processor itself. It thus allows two separated processors to directly access the memory of each other via a network. This has the advantage of reducing latency and increasing throughput, which is relevant particularly for modern HPC systems. As an example, the DMA mechanism is used in data management between a CPU-host and a GPU-device as we shall see later.
 
+## Assigning a MPI rank to a GPU device
+
+Managing multiple GPU-devices by combining MPI and OpenACC or OpenMP APIs requires as a first step assigning each MPI rank to a single GPU-device. In other words, one needs to determine which processes are within a specifc CPU-node that is connecetd with the nearest GPU-node. This permits to minimize latency, and it is particularly relevant when running an application on multiple nodes. This procedure can be done by splitting the world communicator into subgroups of communicators (or sub-communicators), which is done via the routine `MPI_COMM_SPLIT_TYPE()`. Here each sub-communicator contains processes running on the same node. These processes have a shared-memory region defined via the argument `MPI_COMM_TYPE_SHARED` (see [here](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) for more details). Calling the routine `MPI_COMM_SPLIT_TYPE()` returns a sub-communicator "host_comm" created by each subgroup, which in turn can be assigned to a single GPU-device.  
+
+In **OpenACC** API, the host-device connection is established by specifying the runtime library routine `acc_set_device_num(host_rank,deviceType)`. The latter contains two arguments "host_rank" and "deviceType": the first argument determines which device a MPI rank will be assigned to, and the second one returns the GPU-device type to be used. These are indicated by lines ... in the code below. Similarly in **OpenMP** API, the connection is defined via the function `omp_set_default_device(host_rank)`.
+
 ## GPU-non-aware MPI
+
+The MPI implementation without GPU-direct memory access or GPU-non-aware MPI simply means that the memory-to-memory transfer has to pass through the host during the communication between a host and a device in order to update the data before get offloaded back to a device. The implementation is provided for both... Details about the implementation of OpenACC and OpenMP APIs alone has been already addressed in our previous tutorial [here](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html).
 
 ### The hybrid MPI-OpenACC
 
+This approach is based on updating the data on the host 
+
+the directive `update`.
+
+!copy data from GPU to CPU
+!$acc update host(array)
+
+!copy data from CPU to GPU
+!$acc update device(array) 
 
 ### The hybrid MPI-OpenMP offloading
+
+!$omp target update device(host_rank) from(array)
+
+!$omp target update device(host_rank) to(array)
+
+Although this approach is simple to implement, it might lead to a low performance caused by an explicit transfer of data between a host and a device when updating the data. Furthermore, the approach is synchronous, which does not allow overlapping between MPI-based computation and OpenACC operations. An alternative to this approach is to use the GPU-aware MPI as described in the following section. 
 
 
 ## GPU-aware MPI
@@ -86,3 +109,15 @@ In the following we implement this concept for both MPI-OpenACC and MPI-OpenMP A
 
 (conclusion)=
 # Conclusion
+
+# References
+
+Here are some relevant references: 
+
+- [MPI documentation](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf)
+
+- [OpenACC for Programmers: Concepts and Strategies](https://www.oreilly.com/library/view/openacc-for-programmers/9780134694306/)
+
+- [Tutorials on OpenACC and OpenMP offloading](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html)
+
+- [OpenACC course](https://github.com/HichamAgueny/GPU-course)

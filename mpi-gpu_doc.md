@@ -55,7 +55,7 @@ Here we describe the compilation process of an MPI-application for GNU, Intel an
 (implementation-mpi-acc-omp)=
 # Implementation of MPI-OpenACC and MPI-OpenMP models
 
-In this section we extend our MPI-application to incorporate the OpenACC and OpenMP offloading APIs targeting both NVIDIA and AMD GPU-accelerators. The implementation of this hybrid model has the potential of fully utilizing multiple GPUs not only within a single GPU node but it extends to multiple GPU nodes (cf. Fig. 1). A special focus here is to address the concept of MPI with GPU-direct memory access ([GPU-aware MPI](...)) and MPI without GPU-direct access ([GPU-non-aware MPI](...)). The approach is how to make a GPU-device aware or not aware of the availability of a MPI-library, such that a direct or non-direct access to the library can be accomplished. Before addressing this concept, it is worthwhile defining the mechanism of direct-memory access and introducing how to establish a connection between each MPI rank and a specific GPU-device. Here, we are in the situation in which a host and a device have a distinct memory (i.e. non-shared memory device).
+In this section we extend our MPI-application to incorporate the OpenACC and OpenMP offloading APIs targeting both NVIDIA and AMD GPU-accelerators. The implementation of this hybrid model has the potential of fully utilizing multiple GPUs not only within a single GPU node but it extends to multiple GPU nodes (cf. Fig. 1). A special focus here is to address the concept of MPI with GPU-direct memory access ([GPU-aware MPI](...)) and MPI without GPU-direct access ([GPU-non-aware MPI](...)). In the following we implement this concept for both the hybrid **MPI-OpenACC** and **MPI-OpenMP**. Details about the implementation of OpenACC and OpenMP APIs alone can be found in our previous tutorial [here](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html). In this context, the approach is how to make a GPU-device aware or not aware of the existence of the MPI-library, such that a direct or non-direct access to the library can be accomplished. Before addressing this concept, it is worthwhile defining the mechanism of direct-memory access and introducing how to establish a connection between each MPI rank and a specific GPU-device. Here, we are in the situation in which a host and a device have a distinct memory (i.e. non-shared memory device).
 
 ## Direct memory access
 
@@ -69,34 +69,13 @@ In **OpenACC** API, the host-device connection is established by specifying the 
 
 ## GPU-non-aware MPI
 
-The MPI implementation without GPU-direct memory access or GPU-non-aware MPI simply means that the memory-to-memory transfer has to pass through the host during the communication between a host and a device in order to update the data before get offloaded back to a device. The implementation is provided for both... Details about the implementation of OpenACC and OpenMP APIs alone has been already addressed in our previous tutorial [here](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html).
+The MPI implementation without GPU-direct memory access or GPU-non-aware MPI simply means that calling an MPI routine from an OpenACC or OpenMP API requires updating the data before and after the MPI call to ensure the correctness of the data. In this scenario, the data are copied back and forth between the host and the device before and after each MPI call. In the hybrid **MPI-OpenACC**, the procedure is defined by specifying the directive `update host()` for copying the data from the device to the host before the MPI call, and by the directive `update device()` specified after the MPI call for copying the data back to the device. A similar concept is adopted in the hybrid **MPI-OpenMP***. Here, updating the data in connection with the MPI call is done by specifying the directives `update device() from()` and `update device() to()`, respectively, for copying the data from the device to the host and back to the device. This is described in the code below via the lines ....
 
-### The hybrid MPI-OpenACC
-
-This approach is based on updating the data on the host 
-
-the directive `update`.
-
-!copy data from GPU to CPU
-!$acc update host(array)
-
-!copy data from CPU to GPU
-!$acc update device(array) 
-
-### The hybrid MPI-OpenMP offloading
-
-!$omp target update device(host_rank) from(array)
-
-!$omp target update device(host_rank) to(array)
-
-Although this approach is simple to implement, it might lead to a low performance caused by an explicit transfer of data between a host and a device when updating the data. Furthermore, the approach is synchronous, which does not allow overlapping between MPI-based computation and OpenACC operations. An alternative to this approach is to use the GPU-aware MPI as described in the following section. 
-
+Although this approach is simple to implement, it might lead to a low performance caused by an explicit transfer of data between a host and a device before and after calling an MPI routine. Furthermore, the approach is synchronous, which does not allow overlapping between MPI-based computation and OpenACC/OpenMP operations. An alternative to this approach is to use the GPU-aware MPI as described in the next section. 
 
 ## GPU-aware MPI
 
 The GPU-aware MPI concept has the advantage of enabling the MPI library to directly access a device memory without passing through the host-memory. This in turn results in high-throughput and low-latency communications, thus rending computational tasks efficient.
-
-In the following we implement this concept for both MPI-OpenACC and MPI-OpenMP APIs.
 
 ### The hybrid MPI-OpenACC
 

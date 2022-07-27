@@ -30,13 +30,13 @@ This descriptive tutorial is organized as follows: In section I, we describe the
 
 - [Summary](#summary)
 - [Introduction](#introduction)
-- [Implementation of MPI](#implementation-of-mpi)
+- [Implementation of MPI alone](#implementation-of-mpi-alone)
 - [Implementation of MPI-OpenACC and MPI-OpenMP models](#implementation-of-mpi-openacc-and-mpi-openmp-models)
 - [Performance analysis](#performance-analysis)
 - [Conclusion](#conclusion)
 
-(implementation-mpi)=
-# Implementation of MPI  
+(implementation-mpi-alone)=
+# Implementation of MPI alone  
 
 The MPI programming model is widely used in the scientific community for intensive parallel computing that requires distributed memory among multiple nodes. In this section, we implement the low-level [MPI standard](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) approach to parallelise our `Fortran` application, which is based on solving the Laplace equation in a uniform 2D-grid. Details about the numerical method can be found here. 
 

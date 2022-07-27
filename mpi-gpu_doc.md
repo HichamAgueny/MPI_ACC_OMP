@@ -50,7 +50,7 @@ Updating the data in the boundaries is a key challenge in this example. This ens
 
 To check the correctness of the results, one can compute the sum of all the elements or eventually display the converged data either in 1D or 2D for comparison. For this reason, we introduce the `MPI_Gather` operation, which allows aggregating the data from each MPI process and make them available only in the root process. This option, however, might become time consuming and eventually might lead to segmentation error when increasing the size of the data.
 
-## Compilation process
+## Compilation process of MPI alone
 
 Here we describe the compilation process of an MPI-application for GNU, Intel and Cray compilers.
 
@@ -96,7 +96,7 @@ In the hybrid **MPI-OpenACC**, the concept is defined by combining the directive
 The same concept is adopted in the hybrid **MPI-OpenMP**. Here however, the arrays in the synatx `target data use_device_ptr(ptr-list)` must be defined as c-pointers. This requires adding a few lines in the Fortran code to take into consideration the pointer aspect of arrays, as described by lines ....  
 
 
-## Compilation process
+## Compilation process of a GPU-hybrid application
 
 (performance-testing)=
 # Performance analysis

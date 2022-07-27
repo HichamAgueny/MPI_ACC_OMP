@@ -1,20 +1,27 @@
-# Hybrid GPU-programming: Combining MPI with GPU-directive models
+# Hybrid GPU-programming: Integrating MPI with GPU-directive models in a GPU-Direct approach
 
+(summary)=
 # Summary 
-
-Parallel computing involving communication between heterogenous systems, especially CPU (central processing unit) and GPU (graphics processing unit), permits to improve the performance of the computation on modern HPC (high-performance computing) systems by many orders of magnitude (see …). This in turn allows us to address large scientific computational problems, which would not be possible using conventional CPU-based approaches. Here, although the GPU-directive programming models OpenACC and OpenMP asynchronous offer the potential to carry out computations across multiple GPUs, the partition of the computation is limited to a single GPU node. Extending the computation to explore multiple GPU nodes requires combining MPI (message passing interface) with either OpenACC or OpenMP application programming interfaces (APIs). Note that CUDA is another alternative. This is not addressed in this tutorial; it will however be the subject of an ulterior tutorial. 
-
-Combining MPI with OpenACC or OpenMP offloading APIs offers the potential to fully utilizing the capacity of multiple GPUs within multiple GPU partitions in modern clusters and supercomputers, thus rendering the HPC applications efficient. This tutorial is thus motivated by the need of guiding users, who are familiar with MPI, in porting their MPI-codes to GPU systems and towards exploring exascale platforms, such as the supercomputer LUMI. 
-
-As we will show, this multi-GPU approach has the potential of reducing the computing time caused by transferring data via the host-memory during heterogenous communications. Here instead the MPI-library can directly access the GPU-device memory, thus rending the performance effective (efficient).
 
 By the end of this tutorial, we expect the users to learn about
 
-- Implementing a mixture of the low-level MPI with the OpenACC or OpenMP APIs.    
-- Implementing MPI with the GPU-direct/indirect memory access.
+- Implementing MPI alone using a blocking mode of communication.  
+- Implementing the hybrid **MPI-OpenACC** and **MPI-OpenMP** models, and specifically: 
+  - Defining the concept of direct memory access.
+  - Setting up a GPU-device to be assigned to an MPI rank.   
+  - Implementing MPI with the GPU-direct/without direct memory access.
+  - Compiling the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications on different HPC systems.
 
+(introduction)=
+# Introduction
 
-This tutorial is organized as follows: In section I, we describe the implementation of the low-level MPI alone using an application based on solving the Laplace equation. In section II, we extend the MPI-application to incorporate a GPU approach. This is done by combining MPI with OpenACC/OpenMP AIPs. Here we will address both GPU-accelerator and non-accelerator -aware MPI-library (i.e. MPI with direct memory access vs MPI with indirect memory access). Section III is devoted to the performance testing. Section II concludes the tutorial.
+Parallel computing involving communication between heterogenous systems, especially CPU (central processing unit) and GPU (graphics processing unit), permits to improve the performance of the computation on modern HPC (high-performance computing) systems by many orders of magnitude (see …). This in turn allows us to address large scientific computational problems, which would not be possible using conventional CPU-based approaches. Here, although the asynchronous GPU-directive programming models (i.e. OpenACC and OpenMP asynchronous) offer the potential to carry out computations across multiple GPUs, the partition of the computation is limited to a single GPU node. Extending the computation to explore multiple GPU nodes requires combining MPI (message passing interface) with either OpenACC or OpenMP application programming interfaces (APIs). Note that CUDA is another alternative. This is not addressed in this tutorial; it will however be the subject of an ulterior tutorial. 
+
+Integrating MPI with OpenACC or OpenMP offloading APIs offers the potential to fully utilizing the capacity of multiple GPUs within multiple GPU partitions in modern clusters and supercomputers. Moreover, it has the advanatge of reducing the computing time caused by transferring data via the host-memory during heterogenous communications, thus rendering the HPC applications efficient. This tutorial is thus motivated by the need of guiding users, who are familiar with MPI, in porting their MPI-based codes to  heterogenous systems and towards exploring exascale platforms, such as the [supercomputer LUMI](https://www.lumi-supercomputer.eu/).
+
+Here we will cover two scenarios: a scenario in which an MPI library can directly access a GPU-device memory (i.e GPU-aware MPI); and a scenario in which there is no interaction between an MPI library and a GPU-device (i.e. GPU-non-aware MPI). The implementation will be provided for both the hybrid **MPI-OpenACC** and **MPI-OpenMP** models.
+
+This descriptive tutorial is organized as follows: In section I, we describe the implementation of the low-level MPI alone using an application based on solving the Laplace equation. In section II, we extend the MPI-application to incorporate a GPU approach. This is done by combining MPI with OpenACC/OpenMP AIPs. Here we will address both GPU-accelerator and non-accelerator -aware MPI library (i.e. MPI with direct memory access vs MPI without direct memory access). Section III is devoted to the performance analysis. Section II concludes the tutorial.
 
 ```{contents} Table of Contents
 ```
@@ -22,6 +29,7 @@ This tutorial is organized as follows: In section I, we describe the implementat
 #### Table of Contents
 
 - [Summary](#summary)
+- [Introduction](#introduction)
 - [Implementation of MPI](#implementation-of-mpi)
 - [Implementation of MPI-OpenACC and MPI-OpenMP models](#implementation-of-mpi-openacc-and-mpi-openmp-models)
 - [Performance analysis](#performance-analysis)
@@ -67,13 +75,13 @@ Managing multiple GPU-devices by combining MPI and OpenACC or OpenMP APIs requir
 
 In **OpenACC** API, the host-device connection is established by specifying the runtime library routine `acc_set_device_num(host_rank,deviceType)`. The latter contains two arguments "host_rank" and "deviceType": the first argument determines which device a MPI rank will be assigned to, and the second one returns the GPU-device type to be used. These are indicated by lines ... in the code below. Similarly in **OpenMP** API, the connection is defined via the function `omp_set_default_device(host_rank)`.
 
-## GPU-non-aware MPI
+## GPU-non-aware MPI library
 
 The MPI implementation without GPU-direct memory access or GPU-non-aware MPI simply means that calling an MPI routine from an OpenACC or OpenMP API requires updating the data before and after the MPI call to ensure the correctness of the data. In this scenario, the data are copied back and forth between the host and the device before and after each MPI call. In the hybrid **MPI-OpenACC**, the procedure is defined by specifying the directive `update host()` for copying the data from the device to the host before the MPI call, and by the directive `update device()` specified after the MPI call for copying the data back to the device. A similar concept is adopted in the hybrid **MPI-OpenMP**. Here, updating the data in connection with the MPI call is done by specifying the directives `update device() from()` and `update device() to()`, respectively, for copying the data from the device to the host and back to the device. This is illustrated in the code below via lines ....
 
 Although this approach is simple to implement, it might lead to a low performance caused by an explicit transfer of data between a host and a device before and after calling an MPI routine. Furthermore, the approach is synchronous, which does not allow overlapping between MPI-based computation and OpenACC/OpenMP operations. An alternative to this approach is to use the GPU-aware MPI as described in the next section. 
 
-## GPU-aware MPI
+## GPU-aware MPI library
 
 The concept of the GPU-aware MPI library is relies on the possibility of moving data that reside in t
 

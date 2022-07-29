@@ -85,19 +85,13 @@ Although this approach is simple to implement, it might lead to a low performanc
 
 ## GPU-aware MPI library
 
-The concept of the GPU-aware MPI library is relies on the possibility of moving data that reside in t
+The concept of the GPU-awareness MPI relies on the possibility of moving data that reside in a GPU-device memory without necessarily using a CPU-host memory as an intermediate buffer. This approach enables an MPI library to directly access a GPU-device memory, which in turn permits to transfer data  from one GPU to another GPU, thus reducing the communication and computing time of data between different MPI processes.
 
-pointer to a GPU-device is passed to an MPI call.
+In our example discussed in the first [section](implementation-mpi-alone), the data at the boundaries of each MPI process reside on a GPU-device, as they have already been copied there. In the GPU-non-aware MPI concept, these data must be updated on a CPU-host and copyied back to a GPU-device at each iteration. In the GPU-aware MPI, however, these data can be communicated between a pair of GPUs witout necessarily passing through a CPU-host memory. This approach is supported by recent versions of MPI libraries such as [Open MPI](https://www.open-mpi.org/). The idea here is that when a pointer to GPU-device is passed to an MPI call, the MPI library automatically sets up a GPU memory for processing data. This implementation might depend on the availability of some new technologies that are a hardware feature, such as [NVIDIA GPUDirect](https://developer.nvidia.com/gpudirect) technology.
 
-To avoid memory copies between CPU-host and GPU-device.
+In the hybrid **MPI-OpenACC**, the concept is defined by combining the directive `host_data` together with the clause `use_device(list_array)`. This combination enables the access to the arrays listed in the the clause `use_device(list_array)` from the [host](https://www.nvidia.com/docs/IO/116711/OpenACC-API.pdf). The list of arrays, which should be already present on a GPU-device memory, are in turn passed to an MPI routine (i.e. `MPI_Send()` and `MPI_Recv()` in our case). 
 
-The GPU-aware MPI concept has the advantage of enabling the MPI library to directly access a GPU-device memory without passing through a CPU-host memory. This results in high-throughput and low-latency communications, thus rending computational tasks efficient.
-
-It allows the transfer of data from one GPU to another GPU. GPU-to-GPU communication...although, it is not necessary that the data can be sent from one GPU to another GPU...and that depends on the implemednted library...as other optimized ways invisible to the developer might take place...
-
-In the hybrid **MPI-OpenACC**, the concept is defined by combining the directive `host_data` together with the clause `use_device(list_array)`. This combination enables the access to the arrays listed in the the clause `use_device(list_array)` from the [host](https://www.nvidia.com/docs/IO/116711/OpenACC-API.pdf). The list of arrays, which should be already present on the GPU-device memory, are in turn passed to the MPI routine (i.e. `MPI_Send()` and `MPI_Recv()` in our case). 
-
-The same concept is adopted in the hybrid **MPI-OpenMP**. Here however, the arrays in the synatx `target data use_device_ptr(ptr-list)` must be defined as c-pointers. This requires adding a few lines in the Fortran code to take into consideration the pointer aspect of arrays, as described by lines ....  
+The same concept is adopted in the hybrid **MPI-OpenMP**. Here however, the arrays in the synatx [`target data use_device_ptr(ptr-list)`](https://www.openmp.org/spec-html/5.1/openmpsu65.html) must be defined as c-pointers, in which each array is a pointer to an object that is accessible on a GPU-device. This requires adding a few lines in the Fortran code to take into consideration the pointer aspect of arrays, as described by lines ....  
 
 
 ## Compilation process of a GPU-hybrid application
@@ -117,7 +111,6 @@ Experiments are carried out on the cluster [Betzy](https://documentation.sigma2.
 # Conclusion
 
 We have presented an overview on GPU-hybrid programming by integrating GPU-directive models (i.e. OpenACC and OpenMP APIs) with the MPI libraray. This was implemented via an application based on sloving the 2D-Laplace equation. The approach adopted here allows, in general, to utilise multiple GPU-devices not only within a single GPU node but it extends to multiple GPU partitions. It thus allows intra-process communications (i.e. GPU-to-CPU) and inter-process communications (i.e. GPU-to-GPU). In particular, we have addressed both GPU-non-aware MPI and GPU-aware MPI library approaches. The latter approach has the advantage of enabling a direct interaction between an MPI library and a GPU-device memmory. This has been shown to increase throughput and reduce latency and thus allowing further improvement of performance.  
-
 
 # References
 

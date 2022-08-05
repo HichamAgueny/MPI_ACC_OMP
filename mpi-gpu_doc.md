@@ -3,7 +3,7 @@
 (summary)=
 # Summary 
 
-We present a descriptive implementation of a hybrid approach in which the MPI (message passing interface) communication framework is combined with either OpenACC or OpenMP application programming interfaces (APIs). The implementation targets a mini-application based on solving the 2D (two-dimension)-Laplace equation. A special focus will be on sending and receiving data that reside in a GPU-device memory. Here the data can be either moved between a pair of GPU-devices with the hardware support or can pass through a CPU-host memory. These two scenarios are referred to as GPU-aware MPI and GPU-non-aware MPI, respectively. Both scenarios will be addressed in the hybrid **MPI-OpenACC** and **MPI-OpenMP** models and their performance will be evaluated and analysed.  
+We present a descriptive implementation of a hybrid approach in which the MPI (message passing interface) communication framework is combined with either OpenACC or OpenMP application programming interfaces (APIs). The implementation targets a mini-application, which based on solving the 2D (two-dimension)-Laplace equation. A special focus will be on sending and receiving data that reside in a GPU-device memory. Here the data can be either moved between a pair of GPU-devices with the hardware support or can pass through a CPU-host memory. These two scenarios are referred to as GPU-aware MPI and GPU-non-aware MPI, respectively. Both scenarios will be addressed in the hybrid **MPI-OpenACC** and **MPI-OpenMP** models and their performance will be evaluated and analysed.  
 
 By the end of this tutorial, we expect the users to learn about
 
@@ -54,7 +54,7 @@ To check the correctness of the results, one can compute the sum of all the elem
 
 ## Compilation process of an MPI-application
 
-Here we describe the compilation process of an MPI-application for GNU, Intel and Cray compilers.
+Here we describe the compilation process of an MPI-application using GNU, Intel and Cray compilers.
 
 - GNU compiler
 
@@ -98,48 +98,81 @@ The same concept is adopted in the hybrid **MPI-OpenMP**. Here however, the arra
 
 Our hybrid application described here is designed such that it supports different programming models: **MPI**, **OpenACC**, **OpenMP offloading**, **MPI-OpenACC** and **MPI-OpenMP**. Specifying the preprocessor macros `_OPENACC`, `_OPENMP` enables which hybrid programming model to be compiled. The compilation process is described according to which HPC system is used. In the following, our hybrid application has been tested on both [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) and [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform).
 
-- On the supercomputer LUMI-EAP
-Here we compile the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications on LUMI-EAP using the Cray compiler `ftn` as described in the following:
+### On the supercomputer LUMI-EAP
 
-**MPI-OpenACC**
+Here we compile the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications on LUMI-EAP (4xAMD MI100 GPUs connected by the Infinity Fabric Link) using the Cray compiler `ftn` as described in the following.
 
-ftn -eZ -D_OPENACC -hacc -o laplace.mpiacc laplace_mpigpu.f90
+- **MPI-OpenACC**
 
-**MPI-OpenMP**
+```console
+$ ftn -eZ -D_OPENACC -hacc -o laplace.mpiacc laplace_mpigpu.f90
+```
 
-ftn -eZ -D_OPENMP -homp -o laplace.mpiomp laplace_mpigpu.f90
+- **MPI-OpenMP**
 
-The flags `hacc` and `homp` enables the OpenACC and OpenMP directives in the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications, respectively.
+```console
+$ ftn -eZ -D_OPENMP -homp -o laplace.mpiomp laplace_mpigpu.f90
+```
+
+Here we use the conditional compilation with the macros `_OPENACC` and `_OPENMP`. This is enabled in the Cray compiler by specifying the option `-eZ` followed by either `-D_OPENACC` to enable **OpenACC** directives or `-D_OPENMP` to enable **OpenMP** directives. The flags `hacc` and `homp` enable the OpenACC and OpenMP directives in the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications, respectively.
 
 We list below the modules to be loaded before compiling the application. We refer readers to the original documentation about the [supercomputer LUMI](https://www.lumi-supercomputer.eu/) for further details about modules and the compilation process:
 
+```console
 module load craype-accel-amd-gfx908
 module load cray-mpich
 module load LUMI/21.12  partition/EAP
 module load rocm/4.5.2
+```
 
+```console
+#!/bin/bash -l
+#SBATCH --job-name=lap-mpiomp_eap
+#SBATCH --account=project_xxxxx
+#SBATCH --time=00:01:00
+#SBATCH --partition=eap
+#SBATCH --nodes=2            #Total nbr of nodes
+#SBATCH --ntasks-per-node=4  #Nbr of tasks per node
+#SBATCH --gpus=8             #Total nbr of GPUs
+#SBATCH --gpus-per-node=4    #Nbr of GPUs per node
 
+#In the case a GPU-aware MPI is implemented
+export MPICH_GPU_SUPPORT_ENABLED=1
+
+srun ./laplace.mpiomp
+```
+
+### On the cluster Betzy
 
 We use a version of OpenMPI library, which has some supports for GPUs and which enables moving data residing on GPU-memory. 
 
-#!/bin/bash -l
-#SBATCH --job-name=lap-mpiomp
-#SBATCH --account=project_465000096
+- **MPI-OpenACC**
+
+```console
+$ mpif90 -cpp -D_OPENACC -fast -acc -Minfo=accel -o laplace.mpiacc laplace_mpigpu.f90
+```
+
+- **MPI-OpenMP**
+
+```console
+$ mpifort -cpp -D_OPENMP -mp=gpu -Minfo=mp -o laplace.mpiomp laplace_mpigpu.f90
+```
+Where we use `-cpp` to manually invoke the preprocessor. The flag `-mp=gpu` enables **OpenMP** targeting GPU. The option `-Minfo=mp` provides compiler diagnostic of **OpenMP**. It is also optional to specify the compute capability by adding the flag `-gpu=cc60` for NVIDIA P100 GPU ([Saga](https://documentation.sigma2.no/hpc_machines/saga.html)) and `-gpu=cc80` for A100 GPU ([Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html)).
+
+```console
+#SBATCH --job-name=lap-mpiomp_betz
+#SBATCH --account=nnxxxxx
 #SBATCH --time=00:01:00
-#SBATCH --partition=eap
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-##SBATCH --cpus-per-task=8
-#SBATCH --gpus=4
-#SBATCH --gpus-per-node=4
+#SBATCH --qos=devel
+#SBATCH --partition=accel --gpus=8
+#SBATCH --nodes=2            #Total nbr of nodes
+#SBATCH --ntasks-per-node=4  #Nbr of tasks per node
+#SBATCH --gpus-per-node=4    #Nbr of GPUs per node
+#SBATCH --mem-per-cpu=2G     #Host memory per CPU core
 
-#in the case of multithreaded OMP
-##export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-#if it needs GPU-aware MPI
-export MPICH_GPU_SUPPORT_ENABLED=1
+srun ./laplace.mpiomp
+```
 
-#srun ./laplace.mpiomp.device
-srun ./test.mpiomp
 
 (performance-testing)=
 # Performance analysis

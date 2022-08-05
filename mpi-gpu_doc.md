@@ -52,7 +52,7 @@ Updating the data in the boundaries is a key challenge in this example. This ens
 
 To check the correctness of the results, one can compute the sum of all the elements or eventually display the converged data either in 1D or 2D for comparison. For this reason, we introduce the `MPI_Gather` operation, which allows aggregating the data from each MPI process and make them available only in the root process. This option, however, might become time consuming and eventually might lead to segmentation error when increasing the size of the data.
 
-## Compilation process of MPI alone
+## Compilation process of an MPI-application
 
 Here we describe the compilation process of an MPI-application for GNU, Intel and Cray compilers.
 
@@ -94,13 +94,52 @@ In the hybrid **MPI-OpenACC**, the concept is defined by combining the directive
 The same concept is adopted in the hybrid **MPI-OpenMP**. Here however, the arrays in the synatx [`target data use_device_ptr(ptr-list)`](https://www.openmp.org/spec-html/5.1/openmpsu65.html) must be defined as c-pointers, in which each array is a pointer to an object that is accessible on a GPU-device. This requires adding a few lines in the Fortran code to take into consideration the pointer aspect of arrays, as described by lines ....  
 
 
-## Compilation process of a GPU-hybrid application
+## Compilation process of a hybrid application
 
-the preprocessor macro _OPENACC enables the OpenACC directives during the compilation process.
+Our hybrid application described here is designed such that it supports different programming models: **MPI**, **OpenACC**, **OpenMP offloading**, **MPI-OpenACC** and **MPI-OpenMP**. Specifying the preprocessor macros `_OPENACC`, `_OPENMP` enables which hybrid programming model to be compiled. The compilation process is described according to which HPC system is used. In the following, our hybrid application has been tested on both [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) and [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform).
 
-Specifying the preprocessor macro to enable which programming models to be compiled (`_MPI`, `_OPENACC`, `_OPENMP`)
+- On the supercomputer LUMI-EAP
+Here we compile the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications on LUMI-EAP using the Cray compiler `ftn` as described in the following:
 
-We use a version of OpenMPI library, which has some supports for GPUs, which enables moving data residing on GPU-memory.
+**MPI-OpenACC**
+
+ftn -eZ -D_OPENACC -hacc -o laplace.mpiacc laplace_mpigpu.f90
+
+**MPI-OpenMP**
+
+ftn -eZ -D_OPENMP -homp -o laplace.mpiomp laplace_mpigpu.f90
+
+The flags `hacc` and `homp` enables the OpenACC and OpenMP directives in the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications, respectively.
+
+We list below the modules to be loaded before compiling the application. We refer readers to the original documentation about the [supercomputer LUMI](https://www.lumi-supercomputer.eu/) for further details about modules and the compilation process:
+
+module load craype-accel-amd-gfx908
+module load cray-mpich
+module load LUMI/21.12  partition/EAP
+module load rocm/4.5.2
+
+
+
+We use a version of OpenMPI library, which has some supports for GPUs and which enables moving data residing on GPU-memory. 
+
+#!/bin/bash -l
+#SBATCH --job-name=lap-mpiomp
+#SBATCH --account=project_465000096
+#SBATCH --time=00:01:00
+#SBATCH --partition=eap
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
+##SBATCH --cpus-per-task=8
+#SBATCH --gpus=4
+#SBATCH --gpus-per-node=4
+
+#in the case of multithreaded OMP
+##export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+#if it needs GPU-aware MPI
+export MPICH_GPU_SUPPORT_ENABLED=1
+
+#srun ./laplace.mpiomp.device
+srun ./test.mpiomp
 
 (performance-testing)=
 # Performance analysis

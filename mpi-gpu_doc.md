@@ -54,7 +54,7 @@ To check the correctness of the results, one can compute the sum of all the elem
 
 ## Compilation process of an MPI-application
 
-Here we describe the compilation process of a pure MPI-application on different HPC systems using the OpenMPI and Intel MPI compilers on the clusters [Saga](https://documentation.sigma2.no/hpc_machines/saga.html) and [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) and the Cray compiler on the [supercomputer LUMI-C](). The compiler wrappers associated with the OpenMPI, Intel MPI and Cray compilers are `mpif90`, `mpiifort` and `ftn`, respectively.
+Here we describe the compilation process of a pure MPI-application on different HPC systems using the OpenMPI and Intel MPI compilers on the clusters [Saga](https://documentation.sigma2.no/hpc_machines/saga.html) and [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) and the Cray compiler on the [supercomputer LUMI](https://www.lumi-supercomputer.eu/). The compiler wrappers associated with the OpenMPI, Intel MPI and Cray compilers are `mpif90`, `mpiifort` and `ftn`, respectively.
 
 ### On the Saga and Betzy clusters
 
@@ -92,7 +92,7 @@ $ mpiifort -o laplace.mpi.intel laplace_mpi.f90
 ````
 `````
 
-Here is an example of a Slurm script
+Here is an example of a batch script to launch an MPI job.
 
 ```console
 #SBATCH --job-name=lap-mpi_saga
@@ -106,9 +106,9 @@ Here is an example of a Slurm script
 srun ./laplace.mpiompi
 ```
 
-### On the supercomputer LUMI-C
+### On the supercomputer LUMI
 
-On the supercomputer LUMI-C, an MPI module is loaded in the environment `cray-mpich` (as described [here](https://docs.lumi-supercomputer.eu/development/compiling/prgenv/#compile-an-mpi-program))
+On the supercomputer LUMI, an MPI module is loaded in the environment `cray-mpich` (as described [here](https://docs.lumi-supercomputer.eu/development/compiling/prgenv/#compile-an-mpi-program))
 
 ```console
 $ module load cray-mpich
@@ -118,6 +118,8 @@ The syntax of the compilation process of an MPI code using the Cray compiler can
 ```console
 $ ftn -o laplace.mpi.cray laplace_mpi.f90
 ```
+
+To launch an MPI job, the following batch script can be used (see also [here](https://docs.lumi-supercomputer.eu/computing/jobs/batch-job/#example-batch-scripts))
 
 ```console
 #!/bin/bash -l
@@ -129,7 +131,7 @@ $ ftn -o laplace.mpi.cray laplace_mpi.f90
 #SBATCH --ntasks-per-node=4
 #SBATCH --partition=standard
 
-srun ./laplace.mpi
+srun ./laplace.mpi.cray
 ```
 
 (implementation-mpi-acc-omp)=

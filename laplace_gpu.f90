@@ -22,7 +22,7 @@ program laplace_gpu
                                          d2fx,d2fy,max_err_part
        real               :: t_start,t_final
        double precision, allocatable :: f(:,:),f_k(:,:),errin(:)
-       double precision, allocatable :: f_send(:,:),f_t(:,:),f_full(:,:)
+       double precision, allocatable :: f_send(:,:),f_full(:,:)
 
 #if defined(_OPENACC) || defined(_OPENMP)
       integer(kind=acc_device_kind) deviceType
@@ -65,38 +65,24 @@ program laplace_gpu
         allocate(errin(nproc))
 
 !Generate the Initial Conditions (ICs)
-!Distribute the ICs over all processes using blocking communication
-!scheme
+!Distribute the ICs over all processes using the operation MPI_Scatter
+
      tag1=2020; tag2=2021
      tag = 2022; nsend = (nx+2)*(nyp+2)
+      allocate(f_send(0:nx+1,0:nyp+1))
+
      if(myid.eq.0) then
-       allocate(f_send(0:nx+1,0:nyp+1)); allocate(f_t(nx,ny))
 
-       f_t = 0d0; f=0d0; f_send = 0d0
-
-       CALL RANDOM_NUMBER(f_t(2:nx-1,2:ny-1))
-       do j=1,nyp
-          f(1:nx,j) = f_t(1:nx,j)
-       enddo
-
-       ii=nyp
-       do k=1,nproc-1
-         do j=1,nyp
-            ii=ii+1
-            f_send(1:nx,j) = f_t(1:nx,ii)
-         enddo
-         
-         !Send a buffer f_send() to the proc nbr k (single sender to single receiver).
-         call MPI_Send(f_send(0:nx+1,0:nyp+1),nsend,MPI_DOUBLE_PRECISION,k,tag,&
-                       MPI_COMM_WORLD, ierr)
-       enddo
-
-       deallocate(f_send); deallocate(f_t)
-      else
-        !Receive f() from the proc 0.
-        call MPI_Recv(f(0:nx+1,0:nyp+1),nsend,MPI_DOUBLE_PRECISION,0, &
-                      tag,MPI_COMM_WORLD, status,ierr)
+       f_send = 0d0
+       CALL RANDOM_NUMBER(f_send(2:nx-1,2:ny-1))
       endif
+
+
+      call MPI_Scatter(f_send(0:nx+1,0:ny+1),nsend,MPI_DOUBLE_PRECISION,&
+                      f(0:nx+1,0:nyp+1), nsend,MPI_DOUBLE_PRECISION,&
+                      0,MPI_COMM_WORLD, ierr)
+
+      call MPI_Barrier(MPI_COMM_WORLD, ierr)
 
 
       iter = 0; max_err=1.0

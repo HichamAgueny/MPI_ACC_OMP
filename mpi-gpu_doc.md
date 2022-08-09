@@ -102,7 +102,7 @@ Here is an example of a batch script to launch an MPI job.
 #SBATCH --nodes=1            #Total nbr of nodes
 #SBATCH --ntasks-per-node=4  #Nbr of tasks per node
 #SBATCH --mem-per-cpu=2G     #Host memory per CPU core
-                             #On Betzy the mem should not be specified
+                             #On Betzy the mem should not be specified for a pure MPI-code
 srun ./laplace.mpiompi
 ```
 
@@ -170,23 +170,63 @@ The same concept is adopted in the hybrid **MPI-OpenMP**. Here however, the arra
 
 Our hybrid application described here is designed such that it supports different programming models: **MPI**, **OpenACC**, **OpenMP offloading**, **MPI-OpenACC** and **MPI-OpenMP**. Specifying the preprocessor macros `_OPENACC`, `_OPENMP` enables which hybrid programming model to be compiled. The compilation process is described according to which HPC system is used. In the following, our hybrid application (i.e. **MPI-OpenACC** and **MPI-OpenMP**) has been tested on both the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI100 GPUs connected by the Infinity Fabric Link).
 
+### On the cluster Betzy
+
+We use a version of OpenMPI library, which has some supports for GPUs and which enables moving data residing on GPU-memory, in which a GPU-awareness concept is supported in the [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) cluster. Note that this concept is not supported in the [Saga](https://documentation.sigma2.no/hpc_machines/saga.html) cluster, and therefore, only the GPU-non-aware MPI concept is supported. For completeness, we refer readers to a tutorial, in which a [GPU-non-aware MPI](https://documentation.sigma2.no/code_development/guides/openacc_mpi.html) was implemented in `C` language. 
+
+The modules to be loaded are listed here according to which cluster is considered.
+
+`````{tabs}
+````{group-tab} Betzy
+
+```console
+$ module load OpenMPI/4.0.5-NVHPC-21.2-CUDA-11.2.1
+```
+````
+````{group-tab} Saga
+
+```console
+$ module load OpenMPI/4.0.3-PGI-20.4-GCC-9.3.0
+```
+````
+`````
+
+The compilation process of the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications is described below
+
+`````{tabs}
+````{group-tab} **MPI-OpenACC**
+
+```console
+$ mpif90 -cpp -D_OPENACC -fast -acc -Minfo=accel -o laplace.mpiacc laplace_mpigpu.f90
+```
+````
+````{group-tab} **MPI-OpenMP**
+
+```console
+$ mpifort -cpp -D_OPENMP -mp=gpu -Minfo=mp -o laplace.mpiomp laplace_mpigpu.f90
+```
+````
+`````
+
+Where we use `-cpp` to manually invoke a preprocessor macro `_OPENACC` or `_OPENMP`. The flag `-mp=gpu` enables **OpenMP** targeting GPU. The option `-Minfo=mp` provides compiler diagnostic of **OpenMP**. It is also optional to specify the compute capability by adding the flag `-gpu=cc60` for NVIDIA P100 GPU ([Saga](https://documentation.sigma2.no/hpc_machines/saga.html)) and `-gpu=cc80` for A100 GPU ([Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html)).
+
+Here is an example of a batch script to launch a hybrid application on Saga and Betzy clusters.
+
+```console
+#SBATCH --job-name=lap-mpiomp_betz
+#SBATCH --account=nnxxxxx
+#SBATCH --time=00:01:00
+#SBATCH --qos=devel
+#SBATCH --partition=accel --gpus=8
+#SBATCH --nodes=2            #Total nbr of nodes
+#SBATCH --ntasks-per-node=4  #Nbr of tasks per node
+#SBATCH --gpus-per-node=4    #Nbr of GPUs per node
+#SBATCH --mem-per-cpu=2G     #Host memory per CPU core
+
+srun ./laplace.mpiomp
+```
+
 ### On the supercomputer LUMI-EAP
-
-Here we compile the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications on LUMI-EAP (4xAMD MI100 GPUs connected by the Infinity Fabric Link) using the Cray compiler `ftn` as described in the following.
-
-- **MPI-OpenACC**
-
-```console
-$ ftn -eZ -D_OPENACC -hacc -o laplace.mpiacc laplace_mpigpu.f90
-```
-
-- **MPI-OpenMP**
-
-```console
-$ ftn -eZ -D_OPENMP -homp -o laplace.mpiomp laplace_mpigpu.f90
-```
-
-Here we use the conditional compilation with the macros `_OPENACC` and `_OPENMP`. This is enabled in the Cray compiler by specifying the option `-eZ` followed by either `-D_OPENACC` to enable **OpenACC** directives or `-D_OPENMP` to enable **OpenMP** directives. The flags `hacc` and `homp` enable the OpenACC and OpenMP directives in the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications, respectively.
 
 We list below the modules to be loaded before compiling the application. We refer readers to the original documentation about the [supercomputer LUMI](https://www.lumi-supercomputer.eu/) for further details about modules and the compilation process:
 
@@ -196,6 +236,27 @@ module load cray-mpich
 module load LUMI/21.12  partition/EAP
 module load rocm/4.5.2
 ```
+
+Here we compile the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications on LUMI-EAP using a Cray compiler of the wrapper `ftn` as described in the following:
+
+`````{tabs}
+````{group-tab} **MPI-OpenACC**
+
+```console
+$ ftn -eZ -D_OPENACC -hacc -o laplace.mpiacc laplace_mpigpu.f90
+```
+````
+````{group-tab} **MPI-OpenMP**
+
+```console
+$ ftn -eZ -D_OPENMP -homp -o laplace.mpiomp laplace_mpigpu.f90
+```
+````
+`````
+
+As described in the previous section, we use the conditional compilation with the macros `_OPENACC` and `_OPENMP`. This is enabled in the Cray compiler by specifying the option `-eZ` followed by either `-D_OPENACC` to enable **OpenACC** directives or `-D_OPENMP` to enable **OpenMP** directives. The flags `hacc` and `homp` enable the OpenACC and OpenMP directives in the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications, respectively.
+
+The following batch script can be used to launch a hybrid application on LUMI-EAP.
 
 ```console
 #!/bin/bash -l
@@ -213,42 +274,6 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 
 srun ./laplace.mpiomp
 ```
-
-### On the cluster Betzy
-
-We use a version of OpenMPI library, which has some supports for GPUs and which enables moving data residing on GPU-memory. 
-
-- **MPI-OpenACC**
-
-```console
-$ mpif90 -cpp -D_OPENACC -fast -acc -Minfo=accel -o laplace.mpiacc laplace_mpigpu.f90
-```
-
-```console
-module load OpenMPI/4.0.5-NVHPC-21.2-CUDA-11.2.1
-```
-
-- **MPI-OpenMP**
-
-```console
-$ mpifort -cpp -D_OPENMP -mp=gpu -Minfo=mp -o laplace.mpiomp laplace_mpigpu.f90
-```
-Where we use `-cpp` to manually invoke the preprocessor. The flag `-mp=gpu` enables **OpenMP** targeting GPU. The option `-Minfo=mp` provides compiler diagnostic of **OpenMP**. It is also optional to specify the compute capability by adding the flag `-gpu=cc60` for NVIDIA P100 GPU ([Saga](https://documentation.sigma2.no/hpc_machines/saga.html)) and `-gpu=cc80` for A100 GPU ([Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html)).
-
-```console
-#SBATCH --job-name=lap-mpiomp_betz
-#SBATCH --account=nnxxxxx
-#SBATCH --time=00:01:00
-#SBATCH --qos=devel
-#SBATCH --partition=accel --gpus=8
-#SBATCH --nodes=2            #Total nbr of nodes
-#SBATCH --ntasks-per-node=4  #Nbr of tasks per node
-#SBATCH --gpus-per-node=4    #Nbr of GPUs per node
-#SBATCH --mem-per-cpu=2G     #Host memory per CPU core
-
-srun ./laplace.mpiomp
-```
-
 
 (performance-testing)=
 # Performance analysis

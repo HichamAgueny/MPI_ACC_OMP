@@ -17,7 +17,7 @@ By the end of this tutorial, we expect the users to learn about
 (introduction)=
 # Introduction
 
-Parallel computing involving communication between heterogenous systems, especially CPU (central processing unit) and GPU (graphics processing unit), permits to improve the performance of the computation on modern HPC (high-performance computing) systems. This in turn allows us to address large scientific computational problems, which would not be possible using conventional CPU-based approaches. Such computational problems can benefit from available GPU-programing models to further accelerate the computation over multiple GPU-devices. Here, although the asynchronous GPU-directive programming models (i.e. OpenACC and OpenMP asynchronous) offer the potential to carry out computations across multiple GPUs, the partition of the computation is limited to a single GPU node. Extending the computation to explore multiple GPU nodes requires combining MPI (message passing interface) with additional GPU-programming models, such as OpenACC and OpenMP application programming interfaces (APIs) and CUDA. In this tutorial, we focus on the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications. 
+Parallel computing involving communication between heterogenous systems, especially CPU (central processing unit) and GPU (graphics processing unit), permits to improve the performance of the computation on modern HPC (high-performance computing) systems. This in turn allows us to address large scientific computational problems, which would not be possible using conventional CPU-based approaches. Such computational problems can benefit from available GPU-programing models to further accelerate the computation over multiple GPU-devices. Here, although the asynchronous GPU-directive programming models (i.e. OpenACC and OpenMP asynchronous) offer the potential to carry out computations across multiple GPUs, the partition of the computation is limited to a single GPU node and without direct memory access to GPU-memory. Extending the computation to explore multiple GPU nodes requires combining MPI (message passing interface) with additional GPU-programming models, such as OpenACC and OpenMP application programming interfaces (APIs) and CUDA. In this tutorial, we focus on the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications. 
 
 Combining MPI with OpenACC or OpenMP offloading APIs offers the potential to fully utilizing the capacity of multiple GPUs within multiple GPU partitions in modern clusters and supercomputers. Moreover, it has the advanatge of reducing the computing time caused by transferring data via the host-memory during heterogenous communications, thus rendering the HPC applications efficient. In this contetx, it has been shown that integrating [GPU-awareness](https://dl.acm.org/doi/10.1109/ICPP.2013.17) into MPI library improves the performance of scientific applications. This tutorial is thus motivated by the need of guiding users, who are familiar with MPI, in porting their MPI-based codes to heterogenous systems and towards exploring exascale platforms, such as the [supercomputer LUMI](https://www.lumi-supercomputer.eu/).
 
@@ -40,27 +40,97 @@ This descriptive tutorial is organized as follows: In section I, we describe the
 (implementation-mpi-alone)=
 # Implementation of MPI alone  
 
-The MPI programming model is widely used in the scientific community for intensive parallel computing that requires distributed memory among multiple nodes. In this section, we implement the low-level [MPI standard](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) approach to parallelise our `Fortran` application, which is based on solving the Laplace equation in a uniform 2D-grid. Details about the numerical method can be found here. 
+The MPI programming model is widely used in the scientific community for intensive parallel computing that requires distributed memory among multiple nodes. In this section, we implement the low-level [MPI standard](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) approach to parallelise our `Fortran` application, which is based on solving the Laplace equation in a uniform 2D-grid. Details about the numerical method can be found [here](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html). 
 
-A starting point here is to generate initial conditions and distribute them among different processes in a communicator group. This is done using the `MPI_Scatter` operation, which distributes the generated data from the processes 0 (root) to processes labeled *myid* (i.e. the rank of an MPI process) defined in the range [*myid=0*, *myid=nproc-1*], where *nproc* is the total number of processes. To be specific, the data, which are initially of dimension *$n_{x}$* x *$n_{y}$* (cf. Fig. 1(a)) are subdivided along the y-direction into sub-arrays of dimension *$n_{x}$* x *$n_{yp}$*, where *$n_{yp}$=$n_{y}$/nproc*, such that each sub-array can be used by each MPI process as shown in Fig. 1(b). 
+A starting point is to generate initial conditions (ICs) and distribute them among different processes in a communicator group. This is done using the `MPI_Scatter` operation, which distributes the generated data from the processes 0 (root) to processes labeled *myid* (i.e. the rank of an MPI process) defined in the range [*myid=0*, *myid=nproc-1*], where *nproc* is the total number of processes. To be specific, the data, which are initially of dimension *$n_{x}$* x *$n_{y}$* (cf. Fig. 1(a)) are subdivided along the y-direction into sub-arrays of dimension *$n_{x}$* x *$n_{yp}$*, where *$n_{yp}$=$n_{y}$/nproc*, such that each sub-array can be used by each MPI process as shown in Fig. 1(b). 
 
-The initial conditions (ICs) we consider are random and are generated by the routine ` RANDOM_NUMBER`. Note that MPI-programs require incorporating the mpi module (i.e. `use mpi`) or including the header file mpif.h (i.e. `include ‘mpif.h’`). The meaning of each called MPI function is included briefly as a comment in the source code.  
+The ICs we consider are random and are generated by the routine ` RANDOM_NUMBER`. Note that MPI-programs require incorporating the mpi module (i.e. `use mpi`) or including the header file mpif.h (i.e. `include ‘mpif.h’`). The meaning of each called MPI function is included briefly as a comment in the source code.  
 
-A subsequent step is to iterate the ICs using an appropriate algorithm. We chose Lanczos algorithm as described in our previous [tutorial](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html) (see also [here](https://arxiv.org/abs/2201.11811)). In the iterative scheme, the distributed data along the y-direction needs to be updated; this is because the data at the boundaries of each sub-array in each MPI process are initially set to zero. For instance, computing the new array *f_k(:,1)* requires updating the elements *f(:,0)* on each process; similarly for *f(:,nyp+1)* (see the loop region defined by lines). A key element here is to transfer the data in the boundaries between the neighboring MPI processes at each iteration. This is schematically illustrated in Fig. 2, which in turn is transformed into a few MPI lines using a blocking communication mode characterized by the MPI functions `MPI_Send()` and `MPI_Recv()` (see lines ….). The blocking mode here means that the **send** and **receive** operations do not return until the message data is available to be re-used. In other words, the operations are completed once the message is buffered.  Note that there are three additional blocking modes for the **send** operation. These modes, however, are not addressed in the present documentation. We thus refer to the [MPI documentation](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) for further description. An alternative to the blocking mode is to use a [non-blocking](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) concept. The latter has the advanatge of enabling overlaping between communication and computation. In this type of mode, the MPI-functions `MPI_Send()` and `MPI_Recv()` are replaced with `MPI-Isend()` and `MPI_Irecv()` respectively, and should be followed by the function `MPI_Wait()`.
+A subsequent step is to iterate the ICs using an appropriate algorithm. We chose Lanczos algorithm as described in our previous [tutorial](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html) (see also [here](https://arxiv.org/abs/2201.11811)). In the iterative scheme, the distributed data along the y-direction needs to be updated; this is because the data at the boundaries of each sub-array in each MPI process are initially set to zero. For instance, computing the new array *f_k(:,1)* requires updating the elements *f(:,0)* on each process; similarly for *f(:,nyp+1)* (see the loop region defined by lines). A key element here is to transfer the data in the boundaries between the neighboring MPI processes at each iteration. This is schematically illustrated in Fig. 2, which in turn is transformed into a few MPI lines using a blocking communication mode characterized by the MPI functions `MPI_Send()` and `MPI_Recv()` (see lines ….). The blocking mode here means that the **send** and **receive** operations do not return until the message data is available to be re-used. In other words, the operations are completed once the message is buffered.  Note that there are three additional blocking modes for the **send** operation. These modes, however, are not addressed in the present tutorial. We thus refer readers to the [MPI documentation](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) for further description. An alternative to the blocking mode is to use a [non-blocking](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf) concept. The latter has the advanatge of enabling overlaping between communication and computation. In this type of mode, the MPI-functions `MPI_Send()` and `MPI_Recv()` are replaced with `MPI-Isend()` and `MPI_Irecv()` respectively, and should be followed by the function `MPI_Wait()`.
 
-Updating the data in the boundaries is a key challenge in this example. This ensures the correctness of the computed maximum between the new and the old arrays at each iteration, thus permitting to check the convergence of the results. The computed maximum is done using the `MPI_Allreduce` operation, in which the result is returned to all MPI processes of the specified communicator group. 
+Updating the data at the boundaries is a key challenge in this example. This ensures the correctness of the computed maximum between the new and the old arrays at each iteration, thus permitting to check the convergence of the results. The computed maximum is done using the `MPI_Allreduce` operation, in which the result is returned to all MPI processes of the specified communicator group. 
 
 To check the correctness of the results, one can compute the sum of all the elements or eventually display the converged data either in 1D or 2D for comparison. For this reason, we introduce the `MPI_Gather` operation, which allows aggregating the data from each MPI process and make them available only in the root process. This option, however, might become time consuming and eventually might lead to segmentation error when increasing the size of the data.
 
 ## Compilation process of an MPI-application
 
-Here we describe the compilation process of an MPI-application using GNU, Intel and Cray compilers.
+Here we describe the compilation process of a pure MPI-application on different HPC systems using the OpenMPI and Intel MPI compilers on the clusters [Saga](https://documentation.sigma2.no/hpc_machines/saga.html) and [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) and the Cray compiler on the [supercomputer LUMI-C](). The compiler wrappers associated with the OpenMPI, Intel MPI and Cray compilers are `mpif90`, `mpiifort` and `ftn`, respectively.
 
-- GNU compiler
+### On the Saga and Betzy clusters
 
-- Intel compiler
+The following procedure is valid for both Saga and Betzy clusters. Here is an example of modules to be loaded.
 
-- Cray compiler
+`````{tabs}
+````{group-tab} OpenMPI module
+
+```console
+$ module load OpenMPI/4.1.1-GCC-11.2.0
+```
+````
+````{group-tab} Intel MPI module
+
+```console
+$ module load impi/2021.4.0-intel-compilers-2021.4.0
+```
+````
+`````
+
+The compilation process is described according to the chosen compiler.
+
+`````{tabs}
+````{group-tab} OpenMPI compiler
+
+```console
+$ mpif90 -o laplace.mpi.ompi laplace_mpi.f90
+```
+````
+````{group-tab} Intel MPI compiler
+
+```console
+$ mpiifort -o laplace.mpi.intel laplace_mpi.f90
+```
+````
+`````
+
+Here is an example of a Slurm script
+
+```console
+#SBATCH --job-name=lap-mpi_saga
+#SBATCH --account=nnxxxxx
+#SBATCH --time=00:01:00
+#SBATCH --qos=devel
+#SBATCH --nodes=1            #Total nbr of nodes
+#SBATCH --ntasks-per-node=4  #Nbr of tasks per node
+#SBATCH --mem-per-cpu=2G     #Host memory per CPU core
+                             #On Betzy the mem should not be specified
+srun ./laplace.mpiompi
+```
+
+### On the supercomputer LUMI-C
+
+On the supercomputer LUMI-C, an MPI module is loaded in the environment `cray-mpich` (as described [here](https://docs.lumi-supercomputer.eu/development/compiling/prgenv/#compile-an-mpi-program))
+
+```console
+$ module load cray-mpich
+```
+The syntax of the compilation process of an MPI code using the Cray compiler can be expressed as:
+
+```console
+$ ftn -o laplace.mpi.cray laplace_mpi.f90
+```
+
+```console
+#!/bin/bash -l
+#SBATCH --job-name=lap-mpi
+#SBATCH --account=project_xxxxx
+#SBATCH --time=00:02:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=4
+#SBATCH --ntasks-per-node=4
+#SBATCH --partition=standard
+
+srun ./laplace.mpi
+```
 
 (implementation-mpi-acc-omp)=
 # Implementation of MPI-OpenACC and MPI-OpenMP models

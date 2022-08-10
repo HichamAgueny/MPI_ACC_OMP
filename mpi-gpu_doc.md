@@ -168,11 +168,11 @@ The same concept is adopted in the hybrid **MPI-OpenMP**. Here however, the arra
 
 ## Compilation process of a hybrid application
 
-Our hybrid application described here is designed such that it supports different programming models: **MPI**, **OpenACC**, **OpenMP offloading**, **MPI-OpenACC** and **MPI-OpenMP**. Specifying the preprocessor macros `_OPENACC`, `_OPENMP` enables which hybrid programming model to be compiled. The compilation process is described according to which HPC system is used. In the following, our hybrid application (i.e. **MPI-OpenACC** and **MPI-OpenMP**) has been tested on both the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI100 GPUs connected by the Infinity Fabric Link).
+Our hybrid application is designed such that it supports different programming models: **MPI**, **OpenACC**, **OpenMP offloading**, **MPI-OpenACC** and **MPI-OpenMP**. The choice of which programming model to be compiled can be selected by specifying the preprocessor macros `_OPENACC` or `_OPENMP` as described below in the compilation syntax, and which depends on the used HPC system. In the following, our hybrid applications **MPI-OpenACC** and **MPI-OpenMP** have been tested on both the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI100 GPUs connected by the Infinity Fabric Link). 
 
 ### On the cluster Betzy
 
-We use a version of OpenMPI library, which has some supports for GPUs and which enables moving data residing on GPU-memory, in which a GPU-awareness concept is supported in the [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) cluster. Note that this concept is not supported in the [Saga](https://documentation.sigma2.no/hpc_machines/saga.html) cluster, and therefore, only the GPU-non-aware MPI concept is supported. For completeness, we refer readers to a tutorial, in which a [GPU-non-aware MPI](https://documentation.sigma2.no/code_development/guides/openacc_mpi.html) was implemented in `C` language. 
+We use a version of OpenMPI library, which has some supports for GPUs and which enables moving data residing on GPU-memory, in which a GPU-awareness concept is supported in the [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) cluster. Note that this concept is not supported in the [Saga](https://documentation.sigma2.no/hpc_machines/saga.html) cluster, and therefore, only the GPU-non-aware MPI concept is supported. For completeness, we refer readers to a tutorial, in which a [GPU-non-aware MPI](https://documentation.sigma2.no/code_development/guides/openacc_mpi.html) was implemented in the `C` language. 
 
 The modules to be loaded are listed here according to which cluster is considered.
 
@@ -228,6 +228,7 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 
 srun ./laplace.mpiacc
 ```
+Note that the GPU-aware support is enabled by setting the environment `export MPICH_GPU_SUPPORT_ENABLED=1` before running the hybrid application.
 
 ### On the supercomputer LUMI-EAP
 

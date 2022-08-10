@@ -213,7 +213,7 @@ Where we use `-cpp` to manually invoke a preprocessor macro `_OPENACC` or `_OPEN
 Here is an example of a batch script to launch a hybrid application on Saga and Betzy clusters.
 
 ```console
-#SBATCH --job-name=lap-mpiomp_betz
+#SBATCH --job-name=lap-mpiacc_betz
 #SBATCH --account=nnxxxxx
 #SBATCH --time=00:01:00
 #SBATCH --qos=devel
@@ -223,7 +223,10 @@ Here is an example of a batch script to launch a hybrid application on Saga and 
 #SBATCH --gpus-per-node=4    #Nbr of GPUs per node
 #SBATCH --mem-per-cpu=2G     #Host memory per CPU core
 
-srun ./laplace.mpiomp
+#In the case a GPU-aware MPI is implemented
+export MPICH_GPU_SUPPORT_ENABLED=1
+
+srun ./laplace.mpiacc
 ```
 
 ### On the supercomputer LUMI-EAP

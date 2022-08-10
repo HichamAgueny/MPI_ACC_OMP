@@ -23,7 +23,7 @@ Combining MPI with OpenACC or OpenMP offloading APIs offers the potential to ful
 
 In this tutorial, we will cover two scenarios: a scenario in which an MPI library can directly access a GPU-device memory (i.e GPU-aware MPI); and a scenario in which there is no interaction between an MPI library and a GPU-device (i.e. GPU-non-aware MPI). The implementation will be provided for both the hybrid **MPI-OpenACC** and **MPI-OpenMP** APIs.
 
-This descriptive tutorial is organized as follows: In [section I](#implementation-of-mpi-alone), we describe the implementation of the low-level MPI alone using an application based on solving the Laplace equation. In [section II](#implementation-of-mpi-openacc-and-mpi-openmp-models), we extend the MPI-application to incorporate a GPU-awareness approach. This is done by combining MPI with OpenACC/OpenMP AIPs. Here we will address both GPU-accelerator and non-accelerator -aware MPI library (i.e. MPI with direct memory access vs MPI without direct memory access). [Section III](#performance-analysis) is devoted to the performance analysis. [Section IV](#conclusion) concludes the tutorial.
+This descriptive tutorial is organized as follows: In [section I](#implementation-of-mpi-alone), we describe the implementation of the low-level MPI alone using an application based on solving the Laplace equation. In [section II](#implementation-of-a-gpu-awareness-approach), we extend the MPI-application to incorporate a GPU-awareness approach. This is done by combining MPI with OpenACC/OpenMP AIPs. Here we will address both GPU-accelerator and non-accelerator -aware MPI library (i.e. MPI with direct memory access vs MPI without direct memory access). [Section III](#performance-analysis) is devoted to the performance analysis. [Section IV](#conclusion) concludes the tutorial.
 
 ```{contents} Table of Contents
 ```
@@ -33,7 +33,7 @@ This descriptive tutorial is organized as follows: In [section I](#implementatio
 - [Summary](#summary)
 - [Introduction](#introduction)
 - [Implementation of MPI alone](#implementation-of-mpi-alone)
-- [Implementation of MPI-OpenACC and MPI-OpenMP models](#implementation-of-mpi-openacc-and-mpi-openmp-models)
+- [Implementation of a GPU-awareness approach](#implementation-of-a-gpu-awareness-approach)
 - [Performance analysis](#performance-analysis)
 - [Conclusion](#conclusion)
 
@@ -134,8 +134,8 @@ To launch an MPI job, the following batch script can be used (see also [here](ht
 srun ./laplace.mpi.cray
 ```
 
-(implementation-mpi-acc-omp)=
-# Implementation of MPI-OpenACC and MPI-OpenMP models
+(implementation-of-a-gpu-awareness-approach)=
+# Implementation of a GPU-awareness approach
 
 In this section we extend our MPI-application to incorporate the OpenACC and OpenMP offloading APIs targeting both NVIDIA and AMD GPU-accelerators. The implementation of this hybrid model has the potential of fully utilizing multiple GPUs not only within a single GPU node but it extends to multiple GPU nodes (cf. Fig. 1). A special focus here is to address the concept of MPI with GPU-direct memory access ([GPU-aware MPI](...)) and MPI without GPU-direct access ([GPU-non-aware MPI](...)). In the following we implement this concept for both the hybrid **MPI-OpenACC** and **MPI-OpenMP**. Details about the implementation of OpenACC and OpenMP APIs alone can be found in our previous tutorial [here](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html). In this context, the approach is how to make a GPU-device aware or not aware of the existence of the MPI-library, such that a direct or non-direct access to the library can be accomplished. Before addressing this concept, it is worthwhile defining the mechanism of direct-memory access and introducing how to establish a connection between each MPI rank and a specific GPU-device. Here, we are in the situation in which a host and a device have a distinct memory (i.e. non-shared memory device).
 
@@ -287,7 +287,7 @@ Experiments are carried out on the cluster [Betzy](https://documentation.sigma2.
 (conclusion)=
 # Conclusion
 
-We have presented an overview on GPU-hybrid programming by integrating GPU-directive models (i.e. OpenACC and OpenMP APIs) with the MPI libraray. This was implemented via an application based on sloving the 2D-Laplace equation. The approach adopted here allows, in general, to utilise multiple GPU-devices not only within a single GPU node but it extends to multiple GPU partitions. It thus allows intra-process communications (i.e. GPU-to-CPU) and inter-process communications (i.e. GPU-to-GPU). In particular, we have addressed both GPU-non-aware MPI and GPU-aware MPI library approaches. The latter approach has the advantage of enabling a direct interaction between an MPI library and a GPU-device memmory. This has been shown to increase throughput and reduce latency and thus allowing further improvement of performance.  
+We have presented an overview on GPU-hybrid programming by integrating GPU-directive models (i.e. OpenACC and OpenMP APIs) with the MPI libraray. This was implemented via an application based on sloving the 2D-Laplace equation. The approach adopted here allows, in general, to utilise multiple GPU-devices not only within a single GPU node but it extends to multiple GPU partitions. It thus allows intra-process communications (i.e. GPU-to-CPU) and inter-process communications (i.e. GPU-to-GPU). In particular, we have addressed both GPU-non-aware MPI and GPU-aware MPI library approaches. The latter approach has the advantage of enabling a direct interaction between an MPI library and a GPU-device memmory. This has been shown to reduce the computing time caused by the data locality, and thus allowing further improvement of the performance.  
 
 # References
 

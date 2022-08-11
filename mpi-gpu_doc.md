@@ -11,7 +11,7 @@ By the end of this tutorial, we expect the readers to learn about
 - Implementing the hybrid **MPI-OpenACC** and **MPI-OpenMP** models, and specifically: 
   - Defining the concept of direct memory access.
   - Setting up a GPU-device to be assigned to an MPI rank.   
-  - Implementing MPI with a GPU-awareness approach (i.e. GPU-direct/without direct memory access).
+  - Implementing MPI operations between GPUs with and without using a CPU-host memory as a staging point.
   - Compiling the hybrid **MPI-OpenACC** and **MPI-OpenMP** applications on different HPC systems.
 
 (introduction)=

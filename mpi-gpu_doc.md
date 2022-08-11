@@ -3,7 +3,7 @@
 (summary)=
 # Summary 
 
-We present a descriptive implementation of a hybrid approach in which the MPI (message passing interface) communication framework is combined with either OpenACC or OpenMP application programming interfaces (APIs). The implementation is based on solving the 2D (two-dimension)-Laplace equation in a mini-application form. A special focus will be on sending and receiving data that reside in a GPU-device memory. Here the data can be either moved between a pair of GPU-devices with the GPU-hardware support or can pass through a CPU-host memory. These two scenarios are referred to as GPU-aware MPI and GPU-non-aware MPI, respectively. Both scenarios will be addressed in the hybrid **MPI-OpenACC** and **MPI-OpenMP** models and their performance will be evaluated and analysed.  
+We present a descriptive implementation of a hybrid approach in which the MPI (message passing interface) communication framework is combined with either OpenACC or OpenMP application programming interfaces (APIs). The implementation is based on solving the 2D (two-dimension)-Laplace equation in a mini-application form. A special focus will be on performing point-to-point and collective operations either between a pair of GPU-devices with the GPU-hardware support or by passing through a CPU-host memory. These two scenarios are referred to as GPU-aware MPI and GPU-non-aware MPI, respectively. Both scenarios will be addressed in the hybrid **MPI-OpenACC** and **MPI-OpenMP** models and their performance will be evaluated and analysed.  
 
 By the end of this tutorial, we expect the readers to learn about
 

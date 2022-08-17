@@ -308,8 +308,7 @@ Experiments are carried out on the cluster [Betzy](https://documentation.sigma2.
 
 <img src="https://user-images.githubusercontent.com/95568317/185098641-6b3fae94-7470-4b1a-9931-126968dd0eac.png" width="800" height="500">
 
-
-**Fig. 3.** *Comparison of the performance of the computations as a function of the number of points along the x-axis (i.e. nx). Note that we use a unifore 2D-grid. The computations are carried out on a single node having 4xAMD MI250x GPUs on the superocmputer LUMI using: (Black curve) **MPI-OpenACC** with the GPU-aware MPI support; (green curve) **MPI-OpenACC** with the GPU-non-aware MPI; (bleu curve) **MPI-alone**. For reference, the computations are compared with those performed on the cluster Betzy with 4xNVIDIA A100 GPUs. The square symbols are used for guidance. 
+**Fig. 3.** *Comparison of the performance of the computations as a function of the number of points nx along the x-axis. Note that we use a unifore 2D-grid. The computations are carried out on a single node in which a total of 4 GPUs are allocated (i.e. 2xAMD MI250x GPUs on the [superocmputer LUMI](https://docs.lumi-supercomputer.eu/eap/)) using: (Black curve) **MPI-OpenACC** with the GPU-aware MPI support; (green curve) **MPI-OpenACC** with the GPU-non-aware MPI; (bleu curve) **MPI-alone** with 4 CPU-cores. For reference, the computations are compared with those performed on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) with 4xNVIDIA A100 GPUs. The square symbols are used for guidance.* 
 
 (conclusion)=
 # Conclusion

@@ -319,6 +319,8 @@ Hybrid models\2D-grid (nx,ny) | 8192x8192 | 16384x16384 | 20000x20000 |
 **MPI-OpenACC** with GPU-Non-aware MPI | 14.90 | 58.03 | 86.25 |
 **MPI-OpenMP** with GPU-Non-aware MPI  | 14.84 | 61.21 | 85.58 |
 
+**Table 1** *Comparison of the performance between the hybrid **MPI-OpenACC** and **MPI-OpenMP** APIs at three different grids increased in size. The comparison is performed for both GPU-aware MPI and GPU-non-aware MPI.*
+
 (conclusion)=
 # Conclusion
 

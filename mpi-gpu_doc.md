@@ -310,10 +310,19 @@ Experiments are carried out on the cluster [Betzy](https://documentation.sigma2.
 
 **Fig. 3.** *Comparison of the performance of the computations as a function of the number of points nx along the x-axis. Note that we use a unifore 2D-grid. The computations are carried out on a single node in which a total of 4 GPUs are allocated (i.e. 2xAMD MI250x GPUs on the [superocmputer LUMI](https://docs.lumi-supercomputer.eu/eap/)) using: (Black curve) **MPI-OpenACC** with the GPU-aware MPI support; (green curve) **MPI-OpenACC** with the GPU-non-aware MPI; (bleu curve) **MPI-alone** with 4 CPU-cores. For reference, the computations are compared with those performed on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) with 4xNVIDIA A100 GPUs. The square symbols are used for guidance.* 
 
+For completeness, we provide a comparison of the performance between the hybrid **MPI-OpenACC** and **MPI-OpenMP** APIs. The performance for both the GPU-aware MPI and GPU-non-aware MPI are shown. The comparison is summarised in the table below and shows a comparative performance between these two hybrid models.
+
+Hybrid models\2D-grid (nx,ny) | 8192x8192 | 16384x16384 | 20000x20000 |
+-- | -- | -- |-- | 
+**MPI-OpenACC** with GPU-aware MPI | 1.46 | 5.11 | 7.92 |
+**MPI-OpenMP** with GPU-aware MPI  | 1.35 | 4.72 | 7.09 |
+**MPI-OpenACC** with GPU-Non-aware MPI | 14.90 | 58.03 | 86.25 |
+**MPI-OpenMP** with GPU-Non-aware MPI  | 14.84 | 61.21 | 85.58 |
+
 (conclusion)=
 # Conclusion
 
-We have presented an overview on GPU-hybrid programming by integrating GPU-directive models (i.e. OpenACC and OpenMP APIs) with the MPI libraray. This was implemented via an application based on sloving the 2D-Laplace equation. The approach adopted here allows, in general, to utilise multiple GPU-devices not only within a single GPU node but it extends to multiple GPU partitions. It thus allows intra-process communications (i.e. GPU-to-CPU) and inter-process communications (i.e. GPU-to-GPU through GPU interconnects). In particular, we have addressed both GPU-non-aware MPI and GPU-aware MPI library approaches. The latter approach has the advantage of enabling a direct interaction between an MPI library and a GPU-device memmory, which allows performing MPI operations between a pair of GPUs. This has been shown to reduce the computing time caused by the data locality, and thus allowing to further improve the performance. In our application, we have observed an increase of the performance by a factor of 10 when implementing the GPU-aware MPI scheme and by almost a factor of 30 compared to the case when the GPU-model is not included (i.e. MPI alone).  
+We have presented an overview on GPU-hybrid programming by integrating GPU-directive models (i.e. OpenACC and OpenMP APIs) with the MPI libraray. This was implemented via an application based on sloving the 2D-Laplace equation. The approach adopted here allows, in general, to utilise multiple GPU-devices not only within a single GPU node but it extends to multiple GPU partitions. It thus allows intra-process communications (i.e. GPU-to-CPU) and inter-process communications (i.e. GPU-to-GPU through GPU interconnects). In particular, we have addressed both GPU-non-aware MPI and GPU-aware MPI library approaches. The latter approach has the advantage of enabling a direct interaction between an MPI library and a GPU-device memmory, which allows performing MPI operations between a pair of GPUs. This has been shown to reduce the computing time caused by the data locality, and thus allowing to further improve the performance. In our application, we have observed an increase of the performance by a factor of 10 when implementing the GPU-aware MPI scheme and by almost a factor of 30 compared to the case with MPI alone.  
 
 # References
 

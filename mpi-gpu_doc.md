@@ -304,9 +304,12 @@ Note that the GPU-aware support in MPICH is enabled by setting the environment `
 (performance-testing)=
 # Performance analysis
 
-Experiments are carried out on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI100 GPUs connected by the Infinity Fabric Link).
+Experiments are carried out on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI250x GPUs connected by the Infinity Fabric Link).
 
-**TODO**
+<img src="https://user-images.githubusercontent.com/95568317/185098641-6b3fae94-7470-4b1a-9931-126968dd0eac.png" width="800" height="500">
+
+
+**Fig. 3.** *Comparison of the performance of the computations as a function of the number of points along the x-axis (i.e. nx). Note that we use a unifore 2D-grid. The computations are carried out on a single node having 4xAMD MI250x GPUs on the superocmputer LUMI using: (Black curve) **MPI-OpenACC** with the GPU-aware MPI support; (green curve) **MPI-OpenACC** with the GPU-non-aware MPI; (bleu curve) **MPI-alone**. For reference, the computations are compared with those performed on the cluster Betzy with 4xNVIDIA A100 GPUs. The square symbols are used for guidance. 
 
 (conclusion)=
 # Conclusion

@@ -304,11 +304,18 @@ Note that the GPU-aware support in MPICH is enabled by setting the environment `
 (performance-testing)=
 # Performance analysis
 
-Experiments are carried out on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI250x GPUs connected by the Infinity Fabric Link).
+Our computational tests are performed on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI250x GPUs connected by the Infinity Fabric Link). We carry out experiments based on the hybrid **MPI-OpenACC** and **MPI-OpenMP** APIs in the aim of illustrating the benefit of implementing the GPU-aware MPI library. 
+
+We first start by evaluating the performance of the OpenACC and OpenMP synchronous models on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) and the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/). The computing time based on these two directive models as a function of the number of the spatial grid is shown in **Fig. 3**. Note that only the number of points along the x-axis is shown in the figure. The computation is carried out on a single Slurm GPU. 
+
+OpenACC vs OpenMP: NVIDIA vs AMD (TODO)
+
+In the following, our computations are carried out on the the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/). The effect of the GPU-aware MPI is shown in **Fig. 3**, in which the computations are performed on 4 Slurm GPUs. For reference, the computations based on a pure MPI is also shown (blue curve). Interesting enough, we can see clearly that the computing time is reduced by a factor of 10 when the GPU-aware support is enabled (black curve) compared to the case of the GPU-non-aware MPI (green curve). Moreover, the comparison with a pure MPI API shows a further increase of the performance by a factor of 30.  
+
 
 <img src="https://user-images.githubusercontent.com/95568317/185098641-6b3fae94-7470-4b1a-9931-126968dd0eac.png" width="800" height="500">
 
-**Fig. 3.** *Comparison of the performance of the computations as a function of the number of points nx along the x-axis. Note that we use a unifore 2D-grid. The computations are carried out on a single node in which a total of 4 GPUs are allocated (i.e. 2xAMD MI250x GPUs on the [superocmputer LUMI](https://docs.lumi-supercomputer.eu/eap/)) using: (Black curve) **MPI-OpenACC** with the GPU-aware MPI support; (green curve) **MPI-OpenACC** with the GPU-non-aware MPI; (bleu curve) **MPI-alone** with 4 CPU-cores. For reference, the computations are compared with those performed on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) with 4xNVIDIA A100 GPUs. The square symbols are used for guidance.* 
+**Fig. 3.** *Computing time as a function of the number of points nx along the x-axis. Note that we use a unifore 2D-grid. The computations are carried out on a single node in which a total of 4 GPUs are allocated (i.e. 2xAMD MI250x GPUs on the [superocmputer LUMI](https://docs.lumi-supercomputer.eu/eap/)) using: (Black curve) **MPI-OpenACC** with the GPU-aware MPI support; (green curve) **MPI-OpenACC** with the GPU-non-aware MPI; (bleu curve) **MPI-alone** with 4 CPU-cores. The square symbols are used for guidance.* 
 
 For completeness, we provide a comparison of the performance between the hybrid **MPI-OpenACC** and **MPI-OpenMP** APIs. The performance for both the GPU-aware MPI and GPU-non-aware MPI are shown. The comparison is summarised in the table below and shows a comparative performance between these two hybrid models.
 
@@ -328,11 +335,19 @@ We have presented an overview on GPU-hybrid programming by integrating GPU-direc
 
 # References
 
-Here are some relevant references: 
+Here are some references, in which the tutorial is based on: 
 
 - [MPI documentation](https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf)
 
 - [OpenACC for Programmers: Concepts and Strategies](https://www.oreilly.com/library/view/openacc-for-programmers/9780134694306/)
+
+- [OpenMP API specification 2021](https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5-2.pdf)
+
+- [OpenMP API reference guide](https://www.openmp.org/wp-content/uploads/OpenMPRefCard-5-2-web.pdf)
+
+- [OpenACC API specification 2021](https://www.openacc.org/sites/default/files/inline-images/Specification/OpenACC-3.2-final.pdf)
+
+- [OpenACC API reference guide](https://www.openacc.org/sites/default/files/inline-files/API%20Guide%202.7.pdf)
 
 - [Tutorials on OpenACC and OpenMP offloading](https://documentation.sigma2.no/code_development/guides/converting_acc2omp/openacc2openmp.html)
 

@@ -304,13 +304,7 @@ Note that the GPU-aware support in MPICH is enabled by setting the environment `
 (performance-testing)=
 # Performance analysis
 
-Our computational tests are performed on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) (4xNVIDIA A100 GPUs connected by NVLink) and the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI250x GPUs connected by the Infinity Fabric Link). We carry out experiments based on the hybrid **MPI-OpenACC** and **MPI-OpenMP** APIs in the aim of illustrating the benefit of implementing the GPU-aware MPI library. 
-
-We first start by evaluating the performance of the OpenACC and OpenMP synchronous models on the cluster [Betzy](https://documentation.sigma2.no/hpc_machines/betzy.html) and the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/). The computing time based on these two directive models as a function of the number of the spatial grid is shown in **Fig. 3**. Note that only the number of points along the x-axis is shown in the figure. The computation is carried out on a single Slurm GPU. 
-
-OpenACC vs OpenMP: NVIDIA vs AMD (TODO)
-
-In the following, our computations are carried out on the the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/). The effect of the GPU-aware MPI is shown in **Fig. 3**, in which the computations are performed on 4 Slurm GPUs. For reference, the computations based on a pure MPI is also shown (blue curve). Interesting enough, we can see clearly that the computing time is reduced by a factor of 10 when the GPU-aware support is enabled (black curve) compared to the case of the GPU-non-aware MPI (green curve). Moreover, the comparison with a pure MPI API shows a further increase of the performance by a factor of 30.  
+Our experiments are performed on the supercomputer [LUMI-EAP](https://docs.lumi-supercomputer.eu/eap/) (Early Access Platform) (4xAMD MI250x GPUs connected by the Infinity Fabric Link). We carry out computations based on the hybrid **MPI-OpenACC** and **MPI-OpenMP** APIs in the aim of illustrating the benefit of implementing the GPU-aware MPI library. This is shown in **Fig. 3**, in which we display the computing time as a function of the number of the spatial grid. Note that only the number of points along the x-axis is shown in the figure. Here our computations are performed on 4 Slurm GPUs. For reference, the computations based on a pure MPI is also shown (blue curve). Interesting enough, we can see clearly that the computing time is reduced by a factor of 10 when the GPU-aware support is enabled (black curve) compared to the case of the GPU-non-aware MPI (green curve). Moreover, the comparison with a pure MPI API shows a further increase of the performance by a factor of 30.  
 
 
 <img src="https://user-images.githubusercontent.com/95568317/185098641-6b3fae94-7470-4b1a-9931-126968dd0eac.png" width="800" height="500">
